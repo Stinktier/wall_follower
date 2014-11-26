@@ -35,14 +35,14 @@ bool follow(wall_follower::FollowWall::Request &req, wall_follower::FollowWall::
     double alpha = flag*(-0.15);
     double diff_distance, angular_vel;
 
-    if (sensor1 < 8 && sensor1 > 0 && sensor2 < 8 && sensor2 > 0) {
+    if (sensor1 < 10 && sensor1 > 0 && sensor2 < 10 && sensor2 > 0) {
 
       msg.linear.x = 0.1;
       msg.angular.z = flag*0.314;
 
-    } else if (sensor1 > 15 && sensor1 < INVALID && sensor2 > 15 && sensor2 < INVALID) {
+    /*} else if (sensor1 > 20 && sensor1 < INVALID && sensor2 > 20 && sensor2 < INVALID) {
        msg.linear.x = 0.1;
-       msg.angular.z = flag*(-0.314);
+       msg.angular.z = flag*(-0.314);*/
     } else {
 
      msg.linear.x = 0.1;

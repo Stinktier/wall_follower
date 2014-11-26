@@ -92,11 +92,18 @@ public:
         int left_encoder = 0;
         int right_encoder = 0;
 
+        int tresh_front = 17;
+
         ros::Rate loop_rate(20);
         while (abs(left_encoder) < ticks && abs(right_encoder) < ticks) {
 
             ROS_INFO("Ticks to rotate: %d", ticks);
             ros::spinOnce();
+
+	if ((forward_left < tresh_front &&
+            forward_left > 0) ||
+               (forward_right < tresh_front &&
+               forward_right > 0)) {break;}
 
             left_encoder += delta_encoder_left;
             right_encoder += delta_encoder_right;
@@ -175,7 +182,7 @@ public:
 
         while (!back || !front) {
             ros::spinOnce();
-            if (front_left < 30 && back_left < 30) break;
+            if (front_left < 25 && back_left < 25) break;
             if (front_left < 15) front = true;
             if (back_left < 15) back = true;
             ROS_INFO("front: %d back: %d", front, back);
@@ -185,7 +192,7 @@ public:
 
 	ros::spinOnce();
 	if (front_left > 25) {
-		forward(10.0);
+		forward(12.0);
 		setClientCall(LEFT_TURN);
 	}
 
@@ -210,13 +217,13 @@ public:
        else{
            if (front_left < front_right &&
                    back_left < back_right &&
-                   front_left < 30 &&
-                   back_left < 30) {
+                   front_left < 25 &&
+                   back_left < 25) {
                 s = FOLLOW_LEFT;
            } else if (front_right < front_left &&
                       back_right < back_left &&
-                      front_right < 30 &&
-                      back_right < 30) {
+                      front_right < 25 &&
+                      back_right < 25) {
                 s = FOLLOW_RIGHT;
            }
             else
@@ -300,9 +307,12 @@ private:
             break;
 
         case TWO_LEFT:
-            mc.forward(22.0);
-            mc.setClientCall(LEFT_TURN);
-            mc.checkSensorsTurn();
+	    ros::spinOnce();
+	    if(front_left > 30 || back_left > 30)  {
+            	mc.forward(22.0);
+            	mc.setClientCall(LEFT_TURN);
+            	mc.checkSensorsTurn();
+	    }
         }
 
        mc.previous_state = state;
