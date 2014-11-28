@@ -9,7 +9,7 @@
 
 #define INVALID 1000
 
-enum {FORWARD = 0, LEFT_TURN = 1, RIGHT_TURN = 2, FOLLOW_LEFT = 3, FOLLOW_RIGHT = 4, TWO_LEFT = 5};
+enum {FORWARD = 0, LEFT_TURN = 1, RIGHT_TURN = 2, FOLLOW_LEFT = 3, FOLLOW_RIGHT = 4, TWO_LEFT = 5, SMALL_EDGE_TURN = 6};
   
 int front_left, front_right, back_left, back_right, forward_left, forward_right, state;
 
@@ -62,7 +62,7 @@ public:
     //Method to make the robot drive forward
     void forward() {
 
-        msg.linear.x = 0.1;
+        msg.linear.x = 0.1; //TODO Try increased speed forward and turn. Try 0.15 linear x
         msg.linear.y = 0;
         msg.linear.z = 0;
         msg.angular.x = 0;
@@ -100,10 +100,10 @@ public:
             ROS_INFO("Ticks to rotate: %d", ticks);
             ros::spinOnce();
 
-	if ((forward_left < tresh_front &&
-            forward_left > 0) ||
-               (forward_right < tresh_front &&
-               forward_right > 0)) {break;}
+            if ((forward_left < tresh_front &&
+                forward_left > 0) ||
+                (forward_right < tresh_front &&
+                forward_right > 0)) break;
 
             left_encoder += delta_encoder_left;
             right_encoder += delta_encoder_right;
@@ -174,48 +174,76 @@ public:
 
     //Checks whenever the two sensors have registered an edge of wall
     void checkSensorsTurn() {
-        previous_sensor_reading[0] = front_left;
-        previous_sensor_reading[1] = back_left;
+        //previous_sensor_reading[0] = front_left; //Not used
+        //previous_sensor_reading[1] = back_left;
         bool back = false;
         bool front = false;
         ros::Rate loop_rate(10);
 
         while (!back || !front) {
             ros::spinOnce();
-            if (front_left < 25 && back_left < 25) break;
-            if (front_left < 15) front = true;
-            if (back_left < 15) back = true;
+            //if (front_left < 25 && back_left < 25) break; //Necessary?
+            if (front_left < 20) front = true; //TODO Try these new values for wall edge detection. Old value was 15
+            if (back_left < 20) back = true;
             ROS_INFO("front: %d back: %d", front, back);
             forward();
             loop_rate.sleep();
         }
 
-	ros::spinOnce();
-	if (front_left > 25) {
-		forward(12.0);
-		setClientCall(LEFT_TURN);
-	}
+        ros::spinOnce();
+        if (front_left > 25) {
+            forward(12.0);
+            setClientCall(LEFT_TURN);
+        }
 
+    }
+
+    void checkBackSensorTurn(int prev_state) {
+        if (prev_state == LEFT_TURN) {
+            previous_sensor_reading[1] = back_left;
+
+        } else {
+            previous_sensor_reading[1] = back_right;
+
+        }
+        bool back = false;
+        ros::Rate loop_rate(10);
+
+        while (!back) {
+            ros::spinOnce();
+            //if (front_left < 25 && back_left < 25) break; //Necessary?
+            if (abs(back_left - previous_sensor_reading[1]) > 15) back = true; //TODO Try different values for wall edge detection.
+            ROS_INFO("back: %d", back);
+            forward();
+            loop_rate.sleep();
+        }
+
+        ros::spinOnce();
+        if (front_left > 25) {
+            forward(12.0);
+            setClientCall(LEFT_TURN);
+        }
     }
 
     //Checks the ir sensors which decides what state to use
     int checkState() {
         int tresh_front = 17;
-	int s;
+        int s;
 
-       if ((forward_left < tresh_front &&
-            forward_left > 0) ||
-               (forward_right < tresh_front &&
-               forward_right > 0)){
-           if (front_left > front_right ||
-                   back_left > back_right) {
-                s = LEFT_TURN;
-            }
-            else
-                s = RIGHT_TURN;
-       }
-       else{
-           if (front_left < front_right &&
+        //Checks if robot is close to a wall do turn, else follow wall or go forward
+        if ((forward_left < tresh_front &&
+                forward_left > 0) ||
+                (forward_right < tresh_front && forward_right > 0) ||
+                (forward_left < 25 && forward_right > 40) || //TODO Test these two lines for turning where it went wrong before. Small wall pointing out.
+                (forward_right < 25 && forward_left > 40)) {
+               if (front_left > front_right ||
+                       back_left > back_right) {
+                    s = LEFT_TURN;
+                }
+                else
+                    s = RIGHT_TURN;
+        } else {
+             if (front_left < front_right &&
                    back_left < back_right &&
                    front_left < 25 &&
                    back_left < 25) {
@@ -228,8 +256,8 @@ public:
            }
             else
                 s = FORWARD;
-       }
-       return s;
+        }
+        return s;
     }
 
 private:
@@ -255,74 +283,78 @@ private:
     //Initial state
     state = FORWARD;
 
-	//Start comment HERE
    while (ros::ok())
    {
-       ros::spinOnce();
+        ros::spinOnce();
 
-       //Returns the state the robot is in depending on the ir sensor readings
-       state = mc.checkState();
+        //Returns the state the robot is in depending on the ir sensor readings
+        state = mc.checkState();
 
-       //Decides the state depending on the state transition
-       if (mc.previous_state == FOLLOW_LEFT && state == FORWARD) {
-            state = TWO_LEFT;
-       }
-
-       ROS_INFO("State: %d", state);
-
-        switch (state) {
-        case FORWARD:
-            mc.forward();
-            break;
-
-        case LEFT_TURN:
-            mc.setClientCall(state);
-            break;
-
-        case RIGHT_TURN:
-            mc.setClientCall(state);
-            break;
-
-        case FOLLOW_LEFT:
-            if (state != mc.previous_state) {
-                mc.previous_sensor_reading[0] = front_left;
-                mc.previous_sensor_reading[1] = back_left;
-            }
-            if (mc.checkSensorsDistanceLeft())
-                mc.setClientCall(state);
-            else {
-                mc.forward(22.0);
-            }
-            break;
-
-        case FOLLOW_RIGHT:
-            if (state != mc.previous_state) {
-                mc.previous_sensor_reading[0] = front_right;
-                mc.previous_sensor_reading[1] = back_right;
-            }
-            if (mc.checkSensorsDistanceRight()) mc.setClientCall(state);
-            else {
-                mc.forward(22.0);
-            }
-            break;
-
-        case TWO_LEFT:
-	    ros::spinOnce();
-	    if(front_left > 30 || back_left > 30)  {
-            	mc.forward(22.0);
-            	mc.setClientCall(LEFT_TURN);
-            	mc.checkSensorsTurn();
-	    }
+        //Decides the state depending on the state transition
+        if (mc.previous_state == FOLLOW_LEFT && state == FORWARD) {
+             state = TWO_LEFT;
+        } else if (mc.previous_state == LEFT_TURN && (state == FORWARD || state == FOLLOW_RIGHT)) {
+            state = SMALL_EDGE_TURN;
+        } else if (mc.previous_state == RIGHT_TURN && (state == FORWARD || state == FOLLOW_LEFT)) {
+            state = SMALL_EDGE_TURN;
         }
 
-       mc.previous_state = state;
+        ROS_INFO("State: %d", state);
 
-       loop_rate.sleep();
+        //Do action depending on the state
+        switch (state) {
+            case FORWARD:
+                mc.forward();
+                break;
+
+            case LEFT_TURN:
+                mc.setClientCall(state);
+                break;
+
+            case RIGHT_TURN:
+                mc.setClientCall(state);
+                break;
+
+            case FOLLOW_LEFT:
+                if (state != mc.previous_state) {
+                    mc.previous_sensor_reading[0] = front_left;
+                    mc.previous_sensor_reading[1] = back_left;
+                }
+                if (mc.checkSensorsDistanceLeft())
+                    mc.setClientCall(state);
+                else {
+                    mc.forward(22.0);
+                }
+                break;
+
+            case FOLLOW_RIGHT:
+                if (state != mc.previous_state) {
+                    mc.previous_sensor_reading[0] = front_right;
+                    mc.previous_sensor_reading[1] = back_right;
+                }
+                if (mc.checkSensorsDistanceRight()) mc.setClientCall(state);
+                else {
+                    mc.forward(22.0);
+                }
+                break;
+
+            case TWO_LEFT:
+                ros::spinOnce();
+                if(front_left > 30 || back_left > 30)  {
+                        mc.forward(22.0);
+                        mc.setClientCall(LEFT_TURN);
+                        mc.checkSensorsTurn();
+                }
+
+            case SMALL_EDGE_TURN:
+                mc.checkBackSensorTurn(mc.previous_state);
+        }
+
+        mc.previous_state = state;
+
+        loop_rate.sleep();
 
    }
-//End comment HERE
-/*	mc.forward(25);
-	mc.setClientCall(LEFT_TURN);*/
 
    return 0;
  }
