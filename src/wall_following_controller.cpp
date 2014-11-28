@@ -8,6 +8,7 @@
 static int distance_sensor_leftfront, distance_sensor_rightfront, distance_sensor_leftback, distance_sensor_rightback;
 ros::Publisher twist_pub;
 
+//Callback for updating Ir sensor measurments
 void DistanceCallback(const ras_arduino_msgs::ADConverter::ConstPtr &msg)
  {
    distance_sensor_leftfront = msg->ch1;
@@ -17,6 +18,7 @@ void DistanceCallback(const ras_arduino_msgs::ADConverter::ConstPtr &msg)
    //ROS_INFO("dlf: [%d], drf: [%d], dlb: [%d], drb: [%d]", distance_sensor_leftfront, distance_sensor_rightfront, distance_sensor_leftback, distance_sensor_rightback);
  }
 
+//Aligns and follows the wall
 bool follow(wall_follower::FollowWall::Request &req, wall_follower::FollowWall::Response &res) {
 
     geometry_msgs::Twist msg;
