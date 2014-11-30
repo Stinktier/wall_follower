@@ -258,12 +258,12 @@ public:
         }
 
         //Decides the state depending on the state transition
-        if (previous_state == FOLLOW_LEFT && state == FORWARD) {
-             state = TWO_LEFT;
-        } else if (previous_state == LEFT_TURN && (state == FORWARD || state == FOLLOW_RIGHT)) {
-            state = SMALL_EDGE_TURN;
-        } else if (previous_state == RIGHT_TURN && (state == FORWARD || state == FOLLOW_LEFT)) {
-            state = SMALL_EDGE_TURN;
+        if (previous_state == FOLLOW_LEFT && s == FORWARD) {
+             s = TWO_LEFT;
+        } else if (previous_state == LEFT_TURN && (s == FORWARD || s == FOLLOW_RIGHT)) {
+            s = SMALL_EDGE_TURN;
+        } else if (previous_state == RIGHT_TURN && (s == FORWARD || s == FOLLOW_LEFT)) {
+            s = SMALL_EDGE_TURN;
         }
 
         return s;
