@@ -199,12 +199,15 @@ public:
     }
 
     void checkBackSensorTurn(int prev_state) {
+        int back_sensor, front_sensor;
         if (prev_state == LEFT_TURN) {
             previous_sensor_reading[1] = back_left;
-
+            back_sensor = back_left;
+            front_sensor = front_left;
         } else {
             previous_sensor_reading[1] = back_right;
-
+            back_sensor = back_right;
+            front_sensor = front_right;
         }
         bool back = false;
         ros::Rate loop_rate(10);
@@ -212,14 +215,14 @@ public:
         while (!back) {
             ros::spinOnce();
             //if (front_left < 25 && back_left < 25) break; //Necessary?
-            if (abs(back_left - previous_sensor_reading[1]) > 15) back = true; //TODO Try different values for wall edge detection.
+            if (abs(back_sensor - previous_sensor_reading[1]) > 15) back = true; //TODO Try different values for wall edge detection.
             ROS_INFO("back: %d", back);
             forward();
             loop_rate.sleep();
         }
 
         ros::spinOnce();
-        if (front_left > 25) {
+        if (front_sensor > 25) {
             forward(12.0);
             setClientCall(LEFT_TURN);
         }
@@ -242,21 +245,35 @@ public:
                 }
                 else
                     s = RIGHT_TURN;
-        } else {
+        } else { //If no wall seen in front of robot
              if (front_left < front_right &&
                    back_left < back_right &&
                    front_left < 25 &&
                    back_left < 25) {
                 s = FOLLOW_LEFT;
-           } else if (front_right < front_left &&
+        } else if (front_right < front_left &&
                       back_right < back_left &&
                       front_right < 25 &&
                       back_right < 25) {
                 s = FOLLOW_RIGHT;
-           }
-            else
+        } else if (front_left < front_right &&
+                   back_left < back_right &&
+                   front_left < 25 &&
+                   back_left < 25) {
+
+        } else
                 s = FORWARD;
         }
+
+        //Decides the state depending on the state transition
+        if (previous_state == FOLLOW_LEFT && state == FORWARD) {
+             state = TWO_LEFT;
+        } else if (previous_state == LEFT_TURN && (state == FORWARD || state == FOLLOW_RIGHT)) {
+            state = SMALL_EDGE_TURN;
+        } else if (previous_state == RIGHT_TURN && (state == FORWARD || state == FOLLOW_LEFT)) {
+            state = SMALL_EDGE_TURN;
+        }
+
         return s;
     }
 
@@ -289,15 +306,6 @@ private:
 
         //Returns the state the robot is in depending on the ir sensor readings
         state = mc.checkState();
-
-        //Decides the state depending on the state transition
-        if (mc.previous_state == FOLLOW_LEFT && state == FORWARD) {
-             state = TWO_LEFT;
-        } else if (mc.previous_state == LEFT_TURN && (state == FORWARD || state == FOLLOW_RIGHT)) {
-            state = SMALL_EDGE_TURN;
-        } else if (mc.previous_state == RIGHT_TURN && (state == FORWARD || state == FOLLOW_LEFT)) {
-            state = SMALL_EDGE_TURN;
-        }
 
         ROS_INFO("State: %d", state);
 
