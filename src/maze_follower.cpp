@@ -220,8 +220,10 @@ public:
         //Checks if robot is close to a wall do turn, else follow wall or go forward
         if ((forward_left < tresh_front &&
                 forward_left >= 0) ||
-                (forward_right < tresh_front && forward_right >= 0)) {
-               if (front_left > front_right ||
+                (forward_right < tresh_front && forward_right >= 0) ||
+                (forward_left > 40 && forward_right < 17) ||
+                (forward_right > 40 && forward_left < 17)) {
+                if (front_left > front_right ||
                        back_left > back_right) {
                     s = LEFT_TURN;
                 } else
