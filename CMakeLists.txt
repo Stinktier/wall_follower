@@ -29,7 +29,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-
 add_executable(maze_follower src/maze_follower.cpp)
 add_dependencies(maze_follower ${catkin_EXPORTED_TARGETS})
 target_link_libraries(maze_follower ${catkin_LIBRARIES})
