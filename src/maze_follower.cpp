@@ -269,6 +269,16 @@ public:
         return s;
     }
 
+    bool robotReady() {
+        if (front_left != 0 ||
+                front_right != 0 ||
+                back_left != 0 ||
+                back_right != 0 ||
+                forward_left != 0 ||
+                forward_right != 0) return true;
+        else false;
+    }
+
 private:
     ros::ServiceClient turn_client;
     ros::ServiceClient follow_client;
@@ -291,6 +301,12 @@ private:
 
     //Initial state
     state = FORWARD;
+
+    //Waits for the robot to get non-zero values from Ir sensors
+    ros::spinOnce();
+    while (!mc.robotReady()) {
+        ros::spinOnce();
+    }
 
    while (ros::ok())
    {
