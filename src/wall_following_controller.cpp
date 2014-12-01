@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <ras_arduino_msgs/ADConverter.h>
-#include <wall_follower/FollowWall.h>
+#include <robot_msgs/FollowWall.h>
 
 #define INVALID 1000
   
@@ -19,7 +19,7 @@ void DistanceCallback(const ras_arduino_msgs::ADConverter::ConstPtr &msg)
  }
 
 //Aligns and follows the wall
-bool follow(wall_follower::FollowWall::Request &req, wall_follower::FollowWall::Response &res) {
+bool follow(robot_msgs::FollowWall::Request &req, robot_msgs::FollowWall::Response &res) {
 
     geometry_msgs::Twist msg;
     int sensor1, sensor2, flag;

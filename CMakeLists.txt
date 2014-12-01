@@ -7,22 +7,11 @@ find_package(catkin REQUIRED COMPONENTS
   ras_arduino_msgs
   geometry_msgs
   message_generation
-)
-
-add_service_files(
-	FILES
-	MakeTurn.srv
-        FollowWall.srv
-	ResetPWM.srv
-)
-
-generate_messages(
-	DEPENDENCIES
-	std_msgs
+  robot_msgs
 )
 
 catkin_package(
-	CATKIN_DEPENDS message_runtime roscpp
+	CATKIN_DEPENDS message_runtime roscpp robot_msgs
 )
 
 include_directories(
