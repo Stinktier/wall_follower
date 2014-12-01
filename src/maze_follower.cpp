@@ -2,9 +2,9 @@
 #include <geometry_msgs/Twist.h>
 #include <ras_arduino_msgs/ADConverter.h>
 #include <ras_arduino_msgs/Encoders.h>
-#include <wall_follower/MakeTurn.h>
-#include <wall_follower/FollowWall.h>
-#include <wall_follower/ResetPWM.h>
+#include <robot_msgs/MakeTurn.h>
+#include <robot_msgs/FollowWall.h>
+#include <robot_msgs/ResetPWM.h>
 #include <math.h>
 
 #define INVALID 1000
@@ -30,9 +30,9 @@ public:
         distance_sub = n.subscribe("/ir_sensor_cm", 1, &MazeController::MazeCallback, this);
         twist_pub = n.advertise<geometry_msgs::Twist>("/motor_controller/twist", 1);
         encoder_sub = n.subscribe("/arduino/encoders", 1, &MazeController::EncoderCallback, this);
-        turn_client = n.serviceClient<wall_follower::MakeTurn>("/make_turn");
-        follow_client = n.serviceClient<wall_follower::FollowWall>("/follow_wall");
-        reset_client = n.serviceClient<wall_follower::ResetPWM>("/reset_pwm");
+        turn_client = n.serviceClient<robot_msgs::MakeTurn>("/make_turn");
+        follow_client = n.serviceClient<robot_msgs::FollowWall>("/follow_wall");
+        reset_client = n.serviceClient<robot_msgs::ResetPWM>("/reset_pwm");
         previous_state = FORWARD;
         previous_sensor_reading[0] = 0;
         previous_sensor_reading[1] = 0;
@@ -306,8 +306,8 @@ private:
     ros::ServiceClient turn_client;
     ros::ServiceClient follow_client;
     ros::ServiceClient reset_client;
-    wall_follower::MakeTurn srv_turn;
-    wall_follower::FollowWall srv_follow;
+    robot_msgs::MakeTurn srv_turn;
+    robot_msgs::FollowWall srv_follow;
 
     geometry_msgs::Twist msg;
     int delta_encoder_left;
