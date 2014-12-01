@@ -13,7 +13,6 @@
 enum {FORWARD = 0, LEFT_TURN = 1, RIGHT_TURN = 2, FOLLOW_LEFT = 3, FOLLOW_RIGHT = 4, TWO_LEFT = 5, SMALL_EDGE_TURN = 6};
   
 int front_left, front_right, back_left, back_right, forward_left, forward_right, state;
-string detect;
 
 class MazeController {
 
@@ -32,7 +31,6 @@ public:
         distance_sub = n.subscribe("/ir_sensor_cm", 1, &MazeController::MazeCallback, this);
         twist_pub = n.advertise<geometry_msgs::Twist>("/motor_controller/twist", 1);
         encoder_sub = n.subscribe("/arduino/encoders", 1, &MazeController::EncoderCallback, this);
-        detect_sub = n.subscribe("/espeak/string", 1, &MazeController::DetectCallback, this);
         turn_client = n.serviceClient<wall_follower::MakeTurn>("/make_turn");
         follow_client = n.serviceClient<wall_follower::FollowWall>("/follow_wall");
         reset_client = n.serviceClient<wall_follower::ResetPWM>("/reset_pwm");
@@ -60,11 +58,6 @@ public:
         delta_encoder_left = msg->delta_encoder2;
         delta_encoder_right = msg->delta_encoder1;
         //ROS_INFO("Delta left: %d Delta right: %d", delta_encoder_left, delta_encoder_right);
-    }
-
-    //Callback for detection
-    void DetectCallback(const std_msgs::String::ConstPtr& msg) {
-        detect = msg->data.c_str();
     }
 
     //Method to make the robot drive forward
