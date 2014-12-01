@@ -54,12 +54,14 @@ bool turn(wall_follower::MakeTurn::Request &req, wall_follower::MakeTurn::Respon
     wall_follower::ResetPWM srv;
     srv.request.reset = 1;
 
+    ROS_INFO("Makes turn");
+
     if (reset_client.call(srv)) {
-        ROS_INFO("Succesfully called a service");
+        ROS_INFO("Succesfully called reset pwm service");
 
         while (abs(left_encoder) < ticks && abs(right_encoder) < ticks) {//(abs(left_encoder) < ticks && abs(right_encoder) < ticks) {
-
-            ROS_INFO("Ticks to rotate: %d", ticks);
+	
+            //ROS_INFO("Ticks to rotate: %d", ticks);
             ros::spinOnce();
 
             left_encoder += delta_encoder_left;
@@ -68,8 +70,8 @@ bool turn(wall_follower::MakeTurn::Request &req, wall_follower::MakeTurn::Respon
             twist_pub.publish(msg);
             turn_pub.publish(turn);
 
-            ROS_INFO("w = %f", msg.angular.z);
-            ROS_INFO("Left encoder: %d Right encoder: %d", left_encoder, right_encoder);
+            //ROS_INFO("w = %f", msg.angular.z);
+            //ROS_INFO("Left encoder: %d Right encoder: %d", left_encoder, right_encoder);
 
             loop_rate.sleep();
         }
@@ -78,7 +80,7 @@ bool turn(wall_follower::MakeTurn::Request &req, wall_follower::MakeTurn::Respon
     }
 
     if (reset_client.call(srv)) {
-        ROS_INFO("Succesfully called a service");
+        ROS_INFO("Succesfully called reset pwm service");
     } else {
         ROS_ERROR("Failed to call service. No turn performed.");
     }

@@ -8,6 +8,7 @@
 static int distance_sensor_leftfront, distance_sensor_rightfront, distance_sensor_leftback, distance_sensor_rightback;
 ros::Publisher twist_pub;
 
+//Callback for updating Ir sensor measurments
 void DistanceCallback(const ras_arduino_msgs::ADConverter::ConstPtr &msg)
  {
    distance_sensor_leftfront = msg->ch1;
@@ -17,6 +18,7 @@ void DistanceCallback(const ras_arduino_msgs::ADConverter::ConstPtr &msg)
    //ROS_INFO("dlf: [%d], drf: [%d], dlb: [%d], drb: [%d]", distance_sensor_leftfront, distance_sensor_rightfront, distance_sensor_leftback, distance_sensor_rightback);
  }
 
+//Aligns and follows the wall
 bool follow(wall_follower::FollowWall::Request &req, wall_follower::FollowWall::Response &res) {
 
     geometry_msgs::Twist msg;
@@ -35,17 +37,17 @@ bool follow(wall_follower::FollowWall::Request &req, wall_follower::FollowWall::
     double alpha = flag*(-0.15);
     double diff_distance, angular_vel;
 
-    if (sensor1 < 8 && sensor1 > 0 && sensor2 < 8 && sensor2 > 0) {
+    if (sensor1 < 9 && sensor1 > 0 && sensor2 < 9 && sensor2 > 0) {
 
-      msg.linear.x = 0.1;
+      msg.linear.x = 0.13;
       msg.angular.z = flag*0.314;
 
-    } else if (sensor1 > 15 && sensor1 < INVALID && sensor2 > 15 && sensor2 < INVALID) {
-       msg.linear.x = 0.1;
+    } else if (sensor1 > 12 && sensor1 < INVALID && sensor2 > 12 && sensor2 < INVALID) {
+       msg.linear.x = 0.13;
        msg.angular.z = flag*(-0.314);
     } else {
 
-     msg.linear.x = 0.1;
+     msg.linear.x = 0.13;
 
      diff_distance = (double)(sensor1 - sensor2);
      angular_vel = alpha*diff_distance;
