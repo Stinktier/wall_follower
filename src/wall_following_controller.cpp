@@ -42,7 +42,7 @@ bool follow(robot_msgs::FollowWall::Request &req, robot_msgs::FollowWall::Respon
       msg.linear.x = 0.13;
       msg.angular.z = flag*0.314;
 
-    } else if (sensor1 > 12 && sensor1 < INVALID && sensor2 > 12 && sensor2 < INVALID) {
+    } else if (sensor1 > 20 && sensor1 < INVALID && sensor2 > 20 && sensor2 < INVALID) {//TODO --Try 20 cm was 11 before
        msg.linear.x = 0.13;
        msg.angular.z = flag*(-0.314);
     } else {

@@ -4,7 +4,6 @@
 #include <ras_arduino_msgs/Encoders.h>
 #include <robot_msgs/MakeTurn.h>
 #include <robot_msgs/FollowWall.h>
-#include <robot_msgs/ResetPWM.h>
 #include <math.h>
 
 #define INVALID 1000
@@ -32,7 +31,6 @@ public:
         encoder_sub = n.subscribe("/arduino/encoders", 1, &MazeController::EncoderCallback, this);
         turn_client = n.serviceClient<robot_msgs::MakeTurn>("/make_turn");
         follow_client = n.serviceClient<robot_msgs::FollowWall>("/follow_wall");
-        reset_client = n.serviceClient<robot_msgs::ResetPWM>("/reset_pwm");
         previous_state = FORWARD;
         previous_sensor_reading[0] = 0;
         previous_sensor_reading[1] = 0;
@@ -305,7 +303,6 @@ public:
 private:
     ros::ServiceClient turn_client;
     ros::ServiceClient follow_client;
-    ros::ServiceClient reset_client;
     robot_msgs::MakeTurn srv_turn;
     robot_msgs::FollowWall srv_follow;
 
