@@ -4,6 +4,7 @@
 #include <ras_arduino_msgs/Encoders.h>
 #include <robot_msgs/MakeTurn.h>
 #include <robot_msgs/FollowWall.h>
+#include <robot_msgs/useMazeFollower.h>
 #include <math.h>
 
 #define INVALID 1000
@@ -20,8 +21,10 @@ public:
     ros::Publisher twist_pub;
     ros::Subscriber distance_sub;
     ros::Subscriber encoder_sub;
+
     int previous_state;
     int previous_sensor_reading[2];
+    bool stop;
 
     //Constructor
     MazeController() {
@@ -31,14 +34,27 @@ public:
         encoder_sub = n.subscribe("/arduino/encoders", 1, &MazeController::EncoderCallback, this);
         turn_client = n.serviceClient<robot_msgs::MakeTurn>("/make_turn");
         follow_client = n.serviceClient<robot_msgs::FollowWall>("/follow_wall");
+        stop_server = n.advertiseService("/use_maze_follower",&MazeController::stopCallback, this);
         previous_state = FORWARD;
         previous_sensor_reading[0] = 0;
         previous_sensor_reading[1] = 0;
-
+        stop=false;
     }
 
     //Destructor
     ~MazeController() {}
+
+    //Callback for stopping the Robot
+    bool stopCallback(robot_msgs::useMazeFollower::Request &req, robot_msgs::useMazeFollower::Response &res){
+        if(req.go){
+            stop=false;
+            return true;
+        }
+        if(!req.go){
+            stop=true;
+            return true;
+        }
+    }
 
     //Callback for using IR sensor values
     void MazeCallback(const ras_arduino_msgs::ADConverterConstPtr &msg) {
@@ -109,6 +125,16 @@ public:
 
             loop_rate.sleep();
         }
+    }
+    // Sends 0 for stoping
+    void stopRobot(){
+        msg.linear.x = 0;
+        msg.linear.y = 0;
+        msg.linear.z = 0;
+        msg.angular.x = 0;
+        msg.angular.y = 0;
+        msg.angular.z = 0;
+        twist_pub.publish(msg);
     }
 
     //Sends service message through chosen client to perform desired task
@@ -328,7 +354,7 @@ private:
     ros::ServiceClient follow_client;
     robot_msgs::MakeTurn srv_turn;
     robot_msgs::FollowWall srv_follow;
-
+    ros::ServiceServer stop_server;
     geometry_msgs::Twist msg;
     int delta_encoder_left;
     int delta_encoder_right;
@@ -354,71 +380,74 @@ private:
    while (ros::ok())
    {
         ros::spinOnce();
-
-        //Returns the state the robot is in depending on the ir sensor readings
-        state = mc.chooseState();
-
-        //ROS_INFO("State: %d", state);
-
-        //Do action depending on the state
-        switch (state) {
-            case FORWARD:
-                mc.forward();
-                break;
-
-            case LEFT_TURN:
-                mc.setClientCall(state);
-                break;
-
-            case RIGHT_TURN:
-                mc.setClientCall(state);
-                break;
-
-            case FOLLOW_LEFT:
-                if (state != mc.previous_state) {
-                    mc.previous_sensor_reading[0] = front_left;
-                    mc.previous_sensor_reading[1] = back_left;
-                }
-                if (mc.checkSensorsDistanceLeft())
-                    mc.setClientCall(state);
-                else {
-                    mc.forward(22.0);
-                }
-                break;
-
-            case FOLLOW_RIGHT:
-                if (state != mc.previous_state) {
-                    mc.previous_sensor_reading[0] = front_right;
-                    mc.previous_sensor_reading[1] = back_right;
-                }
-                if (mc.checkSensorsDistanceRight()) mc.setClientCall(state);
-                else {
-                    mc.forward(22.0);
-                }
-                break;
-
-            case TWO_LEFT:
-                ros::spinOnce();
-                if(front_left > 25 || back_left > 25)  {
-                        mc.forward(22.0);
-                        mc.setClientCall(LEFT_TURN);
-                        mc.checkSensorsTurn();
-                        ros::spinOnce();
-                        if (front_left > 25) {
-                            mc.forward(12.0);
-                            mc.setClientCall(LEFT_TURN);
-                        }
-                }
-		break;
-
-            case SMALL_EDGE_TURN:
-                mc.checkBackSensorTurn(mc.previous_state);
+        if(mc.stop){
+            mc.stopRobot();
         }
+        else{
+            //Returns the state the robot is in depending on the ir sensor readings
+            state = mc.chooseState();
 
-        mc.previous_state = state;
+            //ROS_INFO("State: %d", state);
 
-        loop_rate.sleep();
+            //Do action depending on the state
+            switch (state) {
+                case FORWARD:
+                    mc.forward();
+                    break;
 
+                case LEFT_TURN:
+                    mc.setClientCall(state);
+                    break;
+
+                case RIGHT_TURN:
+                    mc.setClientCall(state);
+                    break;
+
+                case FOLLOW_LEFT:
+                    if (state != mc.previous_state) {
+                        mc.previous_sensor_reading[0] = front_left;
+                        mc.previous_sensor_reading[1] = back_left;
+                    }
+                    if (mc.checkSensorsDistanceLeft())
+                        mc.setClientCall(state);
+                    else {
+                        mc.forward(22.0);
+                    }
+                    break;
+
+                case FOLLOW_RIGHT:
+                    if (state != mc.previous_state) {
+                        mc.previous_sensor_reading[0] = front_right;
+                        mc.previous_sensor_reading[1] = back_right;
+                    }
+                    if (mc.checkSensorsDistanceRight()) mc.setClientCall(state);
+                    else {
+                        mc.forward(22.0);
+                    }
+                    break;
+
+                case TWO_LEFT:
+                    ros::spinOnce();
+                    if(front_left > 25 || back_left > 25)  {
+                            mc.forward(22.0);
+                            mc.setClientCall(LEFT_TURN);
+                            mc.checkSensorsTurn();
+                            ros::spinOnce();
+                            if (front_left > 25) {
+                                mc.forward(12.0);
+                                mc.setClientCall(LEFT_TURN);
+                            }
+                    }
+            break;
+
+                case SMALL_EDGE_TURN:
+                    mc.checkBackSensorTurn(mc.previous_state);
+            }
+
+            mc.previous_state = state;
+
+            loop_rate.sleep();
+        }
    }
 
    return 0;
