@@ -186,7 +186,6 @@ public:
             }
             loop_rate.sleep();
         }
-
     }
 
     void checkBackSensorTurn(int prev_state) {
@@ -244,6 +243,17 @@ public:
             return true;
         }
         return false;
+    }
+
+    double wallTooClose() {
+        if ((front_left < 9 && front_left > 0 && back_left < 9 && back_left > 0) &&
+                front_right < 9 && front_right > 0 && back_right < 9 && back_right > 0)
+            return 0.0;
+        else if (front_left < 9 && front_left > 0 && back_left < 9 && back_left > 0) {
+            return -0.314;
+        } else if (front_right < 9 && front_right > 0 && back_right < 9 && back_right > 0) {
+            return 0.314;
+        }
     }
 
     //Checks the ir sensors which decides what state to use
