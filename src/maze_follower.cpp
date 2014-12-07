@@ -173,10 +173,17 @@ public:
         while (!back || !front) {
             ros::spinOnce();
             //if (front_left < 25 && back_left < 25) break; //Necessary?
-            if (front_left < 20) front = true; //TODO Try these new values for wall edge detection. Old value was 15
-            if (back_left < 20) back = true;
-            ROS_INFO("front: %d back: %d", front, back);
-            forward();
+            if (wallInFront()) {
+                if (front == true && back == false) {
+                    setClientCall(RIGHT_TURN);
+                }
+                break;
+            } else {
+                if (front_left < 20) front = true; //TODO Try these new values for wall edge detection. Old value was 15
+                if (back_left < 20) back = true;
+                ROS_INFO("front: %d back: %d", front, back);
+                forward();
+            }
             loop_rate.sleep();
         }
 
@@ -204,41 +211,47 @@ public:
 
         while (!back) {
             ros::spinOnce();
-		if (prev_state == RIGHT_TURN) {
-		    back_sensor = back_left;
-		    front_sensor = front_left;
-		} else {
-		    back_sensor = back_right;
-		    front_sensor = front_right;
-		}
-            //if (front_left < 25 && back_left < 25) break; //Necessary?
+            if (wallInFront()) return;
+            if (prev_state == RIGHT_TURN) {
+                back_sensor = back_left;
+                front_sensor = front_left;
+            } else {
+                back_sensor = back_right;
+                front_sensor = front_right;
+            }
             if (abs(back_sensor - previous_sensor_reading[1]) > 20) back = true; //TODO Try different values for wall edge detection. Old value was 15
             ROS_INFO("back: %d", back);
-	    ROS_INFO("Value: %d", back_sensor);
+            ROS_INFO("Value: %d", back_sensor);
             forward();
             loop_rate.sleep();
         }
 
-        //ros::spinOnce();
         if (front_sensor > 25) {
             forward(15.0);
-	    if(prev_state == LEFT_TURN) setClientCall(RIGHT_TURN);
-	    else setClientCall(LEFT_TURN);
-	    forward(20);
+            if(prev_state == LEFT_TURN) setClientCall(RIGHT_TURN);
+            else setClientCall(LEFT_TURN);
+            forward(20);
         }
     }
 
-    //Checks the ir sensors which decides what state to use
-    int chooseState() {
+    bool wallInFront() {
         int tresh_front = 15;//17;
-        int s;
-
-        //Checks if robot is close to a wall do turn, else follow wall or go forward
         if ((forward_left < tresh_front &&
                 forward_left >= 0) ||
                 (forward_right < tresh_front && forward_right >= 0) ||
                 (forward_left > 40 && forward_right < 20) ||
                 (forward_right > 40 && forward_left < 20)) {
+            return true;
+        }
+        return false;
+    }
+
+    //Checks the ir sensors which decides what state to use
+    int chooseState() {
+        int s;
+
+        //Checks if robot is close to a wall do turn, else follow wall or go forward
+        if (wallInFront()) {
                 /*if (front_left > front_right ||
                        back_left > back_right) {
                     s = LEFT_TURN;
