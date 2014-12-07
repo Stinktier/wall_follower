@@ -446,8 +446,9 @@ private:
 
             mc.previous_state = state;
 
-            loop_rate.sleep();
+
         }
+        loop_rate.sleep();
    }
 
    return 0;
