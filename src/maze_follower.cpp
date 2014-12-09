@@ -236,6 +236,12 @@ public:
 
         while (!back) {
             ros::spinOnce();
+            if(stop){
+                stopRobot();
+                while (stop) {
+                    loop_rate.sleep();
+                }
+            }
             if (wallInFront()) return;
             if (prev_state == RIGHT_TURN) {
                 back_sensor = back_left;
@@ -288,15 +294,10 @@ public:
 
         //Checks if robot is close to a wall do turn, else follow wall or go forward
         if (wallInFront()) {
-                /*if (front_left > front_right ||
-                       back_left > back_right) {
-                    s = LEFT_TURN;
-                } else
-                    s = RIGHT_TURN;*/
-		if (front_right > front_left ||
+            if (front_right > front_left ||
                        back_right > back_left) {
                     s = RIGHT_TURN;
-                } else
+            } else
                     s = LEFT_TURN;
         } else { //If no wall seen in front of robot
              if (front_left < front_right &&
@@ -433,6 +434,12 @@ private:
                             mc.setClientCall(LEFT_TURN);
                             mc.checkSensorsTurn();
                             ros::spinOnce();
+                            if(mc.stop){
+                                mc.stopRobot();
+                                while (mc.stop) {
+                                    loop_rate.sleep();
+                                }
+                            }
                             if (front_left > 25) {
                                 mc.forward(12.0);
                                 mc.setClientCall(LEFT_TURN);
