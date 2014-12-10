@@ -142,20 +142,22 @@ public:
     }
     // Sends 0 for stoping
     void stopRobot(){
-	robot_msgs::ResetPWM srv;
-    	srv.request.reset = 1;
-	if (reset_client.call(srv)) {
-       		ROS_INFO("Succesfully called reset pwm service");
-    	} else {
-        	ROS_ERROR("Failed to call service. No turn performed.");
-    	}
-        msg.linear.x = 0;
-        msg.linear.y = 0;
-        msg.linear.z = 0;
-        msg.angular.x = 0;
-        msg.angular.y = 0;
-        msg.angular.z = 0;
-        twist_pub.publish(msg);
+                robot_msgs::ResetPWM srv;
+                srv.request.reset = 1;
+                if (reset_client.call(srv)) {
+                    ROS_INFO("Succesfully called reset pwm service");
+                } else {
+                    ROS_ERROR("Failed to call service. No turn performed.");
+                }
+                msg.linear.x = 0;
+                msg.linear.y = 0;
+                msg.linear.z = 0;
+                msg.angular.x = 0;
+                msg.angular.y = 0;
+                msg.angular.z = 0;
+                twist_pub.publish(msg);
+
+
     }
 
     //Sends service message through chosen client to perform desired task
@@ -414,6 +416,10 @@ private:
         ros::spinOnce();
         if(mc.stop){
             mc.stopRobot();
+            while (mc.stop) {
+                ros::spinOnce();
+                loop_rate.sleep();
+            }
         }
         else{
             //Returns the state the robot is in depending on the ir sensor readings
