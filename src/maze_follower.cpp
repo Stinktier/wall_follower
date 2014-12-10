@@ -6,6 +6,7 @@
 #include <robot_msgs/FollowWall.h>
 #include <robot_msgs/useMazeFollower.h>
 #include <math.h>
+#include <robot_msgs/ResetPWM.h>
 
 #ifndef MAZE_FOLLOWER_H
 #define MAZE_FOLLOWER_H
@@ -31,6 +32,7 @@ public:
     ros::Publisher twist_pub;
     ros::Subscriber distance_sub;
     ros::Subscriber encoder_sub;
+    ros::ServiceClient reset_client;
 
     int previous_state;
     int previous_sensor_reading[2];
@@ -46,6 +48,7 @@ public:
         turn_client = n.serviceClient<robot_msgs::MakeTurn>("/make_turn");
         follow_client = n.serviceClient<robot_msgs::FollowWall>("/follow_wall");
         stop_server = n.advertiseService("/use_maze_follower",&MazeController::stopCallback, this);
+    	reset_client = n.serviceClient<robot_msgs::ResetPWM>("/reset_pwm");
         previous_state = FORWARD;
         previous_sensor_reading[0] = 0;
         previous_sensor_reading[1] = 0;
@@ -139,6 +142,13 @@ public:
     }
     // Sends 0 for stoping
     void stopRobot(){
+	robot_msgs::ResetPWM srv;
+    	srv.request.reset = 1;
+	if (reset_client.call(srv)) {
+       		ROS_INFO("Succesfully called reset pwm service");
+    	} else {
+        	ROS_ERROR("Failed to call service. No turn performed.");
+    	}
         msg.linear.x = 0;
         msg.linear.y = 0;
         msg.linear.z = 0;
@@ -209,15 +219,21 @@ public:
 
         while (!back || !front) {
             ros::spinOnce();
-            //if (front_left < 25 && back_left < 25) break; //Necessary?
             if (wallInFront()) {
                 if (front == true && back == false) {
                     setClientCall(RIGHT_TURN);
                 }
                 break;
             } else {
-                if (front_left < 20) front = true; //TODO Try these new values for wall edge detection. Old value was 15
+                if (front_left < 20) front = true; 
                 if (back_left < 20) back = true;
+		   if(stop){
+		        stopRobot();
+		        while (stop) {
+			    ros::spinOnce();
+		            loop_rate.sleep();
+		        }
+		    }
                 ROS_INFO("front: %d back: %d", front, back);
                 forward();
             }
@@ -250,6 +266,7 @@ public:
             if(stop){
                 stopRobot();
                 while (stop) {
+		    ros::spinOnce();
                     loop_rate.sleep();
                 }
             }
@@ -451,6 +468,7 @@ private:
                             if(mc.stop){
                                 mc.stopRobot();
                                 while (mc.stop) {
+				    ros::spinOnce();
                                     loop_rate.sleep();
                                 }
                             }
