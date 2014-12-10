@@ -11,12 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-	CATKIN_DEPENDS message_runtime roscpp robot_msgs
+    CATKIN_DEPENDS message_runtime roscpp robot_msgs
 )
 
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(maze_follower src/maze_follower.cpp)
 add_dependencies(maze_follower ${catkin_EXPORTED_TARGETS})
